@@ -11,8 +11,6 @@ type SonosConfig = {
   readonly refreshToken: string;
 };
 
-
-
 const platformFactory = async (
   logger: Logging,
   { clientKey, clientSecret, refreshToken }: SonosConfig
@@ -29,17 +27,12 @@ const platformFactory = async (
 
   logger.debug("Got favorites %s", JSON.stringify(favs, null, 2));
 
-  const fp : FavOnPlayer[] = [];
+  const fp: FavOnPlayer[] = [];
   for (const fe of favs.items) {
     for (const pe of groups) {
-      fp.push(new FavOnPlayer(
-          fe.id,
-          `${fe.name} in ${pe.name}`,
-          pe.id
-        ));
+      fp.push(new FavOnPlayer(fe.id, `${fe.name} in ${pe.name}`, pe.id));
     }
   }
-     
 
   logger.debug("Got favorites speakers %s", JSON.stringify(fp, null, 2));
 

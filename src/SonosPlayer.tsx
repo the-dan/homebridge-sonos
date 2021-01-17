@@ -26,8 +26,8 @@ type SonosFavSpeakerProps = {
 export const SonosFavoritePlayer = ({
   favId,
   name,
-  groupId
-} : SonosFavSpeakerProps) : Component<PlatformAccessoryConfiguration> => {
+  groupId,
+}: SonosFavSpeakerProps): Component<PlatformAccessoryConfiguration> => {
   const { hap } = useHomebridgeApi();
   const sonosApi = useContext(SonosApiContext);
 
@@ -38,14 +38,17 @@ export const SonosFavoritePlayer = ({
     //const pbmd = await sonosApi.groupPlaybackMetadata(groupId);
     //console.log("got pb md %s", JSON.stringify(pbmd, null, 2));
 
-    if (sonosApi.isFavoriteLoaded(favId) && ps.playbackState == PlaybackState.Playing) {
+    if (
+      sonosApi.isFavoriteLoaded(favId) &&
+      ps.playbackState == PlaybackState.Playing
+    ) {
       return true;
     }
 
     return false;
   };
 
-  const setPlaying = async (value: boolean) => {  
+  const setPlaying = async (value: boolean) => {
     if (value) {
       // desired state is "Playing"
 

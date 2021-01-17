@@ -9,15 +9,22 @@ const SONOS_CONTROL_API = "https://api.ws.sonos.com/control/api/v1";
 const CONTENT_TYPE_JSON_HEADER = ["Content-Type", "application/json"];
 
 export class FavOnPlayer {
-  constructor(readonly favId: string, readonly name: string, readonly groupId: string) {}
-};
-
+  constructor(
+    readonly favId: string,
+    readonly name: string,
+    readonly groupId: string
+  ) {}
+}
 
 export class SonosApi {
   private accessToken = "";
   private lastPlayedFavoriteId = "";
 
-  constructor(private clientKey: string, private clientSecret: string, private logger: Logging) {}
+  constructor(
+    private clientKey: string,
+    private clientSecret: string,
+    private logger: Logging
+  ) {}
 
   async createToken(
     authorizationCode: string,
@@ -200,12 +207,12 @@ export class SonosApi {
   async playFavorite(favId: string, groupId: string): Promise<void> {
     const endpoint = `${SONOS_CONTROL_API}/groups/${groupId}/favorites`;
 
-    const req = { 
-        favoriteId: favId,
-        playOnCompletion: true,
-        playModes: { shuffle: true },
-        action: "REPLACE"
-      };
+    const req = {
+      favoriteId: favId,
+      playOnCompletion: true,
+      playModes: { shuffle: true },
+      action: "REPLACE",
+    };
 
     this.logger.debug("Request %s", JSON.stringify(req));
 
@@ -315,23 +322,21 @@ export type Container = {
   tags: string[];
 };
 
-
-
 export type PlayModes = {
-  "repeat": boolean;
-  "repeatOne": boolean;
-  "crossfade": boolean;
-  "shuffle": boolean;
+  repeat: boolean;
+  repeatOne: boolean;
+  crossfade: boolean;
+  shuffle: boolean;
 };
 
 export type PlaybackActions = {
-  "canSkip": boolean;
-  "canSkipBack": boolean;
-  "canSeek": boolean;
-  "canRepeat": boolean;
-  "canRepeatOne": boolean;
-  "canCrossfade": boolean;
-  "canShuffle": boolean;
+  canSkip: boolean;
+  canSkipBack: boolean;
+  canSeek: boolean;
+  canRepeat: boolean;
+  canRepeatOne: boolean;
+  canCrossfade: boolean;
+  canShuffle: boolean;
 };
 
 export type Image = {
@@ -394,7 +399,7 @@ async function getSuccessfulResponseJson<TResponse>(
   response: Response
 ): Promise<TResponse> {
   if (response.status >= 400) {
-  console.log(await response.json());
+    console.log(await response.json());
     throw new StatusCodeError(response.status);
   }
   return (await response.json()) as TResponse;
