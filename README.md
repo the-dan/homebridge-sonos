@@ -23,7 +23,7 @@ Add following lines to the `~/.homebridge/config.json` or configure in Homebridg
 ```
 
 
-[] It seems not possible to get which favorite playlist is playing now. This might lead to a wrong bulb being active in the Home app
-[] Build non-faved speaker accessories per group instead of per player
-[] On/Off player state maps to mute instead of play/pause
-[] Use Smart Speaker instead of Light bulbs?
+- [ ] It seems not possible to get which favorite playlist is playing now. This might lead to a wrong bulb being active in the Home app
+- [ ] Build non-faved speaker accessories per group instead of per player
+- [ ] On/Off player state maps to mute instead of play/pause
+- [ ] Use Smart Speaker instead of Light bulbs?
