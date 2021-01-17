@@ -1,7 +1,7 @@
 import { configureDynamicPlatform } from "@credding/homebridge-jsx";
 import { API, Logging } from "homebridge";
 import { PLATFORM_NAME } from "./settings";
-import { SonosApi } from "./SonosApi";
+import { SonosApi, FavOnPlayer } from "./SonosApi";
 import { SonosApiContext } from "./SonosApiContext";
 import { SonosPlatform } from "./SonosPlatform";
 
@@ -11,21 +11,41 @@ type SonosConfig = {
   readonly refreshToken: string;
 };
 
+
+
 const platformFactory = async (
   logger: Logging,
   { clientKey, clientSecret, refreshToken }: SonosConfig
 ) => {
-  const sonosApi = new SonosApi(clientKey, clientSecret);
+  const sonosApi = new SonosApi(clientKey, clientSecret, logger);
   await sonosApi.refreshToken(refreshToken);
 
   const { households } = await sonosApi.getHouseholds();
   const householdId = households[0].id;
 
-  const { players } = await sonosApi.getGroups(householdId);
+  const { players, groups } = await sonosApi.getGroups(householdId);
+
+  const favs = await sonosApi.getFavorites(householdId);
+
+  logger.debug("Got favorites %s", JSON.stringify(favs, null, 2));
+
+  const fp : FavOnPlayer[] = [];
+  for (const fe of favs.items) {
+    for (const pe of groups) {
+      fp.push(new FavOnPlayer(
+          fe.id,
+          `${fe.name} in ${pe.name}`,
+          pe.id
+        ));
+    }
+  }
+     
+
+  logger.debug("Got favorites speakers %s", JSON.stringify(fp, null, 2));
 
   return (
     <SonosApiContext.Provider value={sonosApi}>
-      <SonosPlatform players={players}></SonosPlatform>
+      <SonosPlatform players={players} favs={fp}></SonosPlatform>
     </SonosApiContext.Provider>
   );
 };

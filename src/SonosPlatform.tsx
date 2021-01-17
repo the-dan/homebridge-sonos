@@ -4,22 +4,30 @@ import {
   DynamicPlatformConfiguration,
 } from "@credding/homebridge-jsx";
 import { PLATFORM_NAME, PLUGIN_IDENTIFIER } from "./settings";
-import { Player } from "./SonosApi";
-import { SonosPlayer } from "./SonosPlayer";
+import {  Player, FavOnPlayer  } from "./SonosApi";
+import {  SonosPlayer, SonosFavoritePlayer } from "./SonosPlayer";
 
 type SonosPlatformProps = {
   players: Player[];
+  favs: FavOnPlayer[];
 };
+
 
 export const SonosPlatform = ({
   players,
-}: SonosPlatformProps): Component<DynamicPlatformConfiguration> => (
-  <DynamicPlatform
+  favs
+}: SonosPlatformProps): Component<DynamicPlatformConfiguration> => {
+  return (<DynamicPlatform
     pluginIdentifier={PLUGIN_IDENTIFIER}
     platformName={PLATFORM_NAME}
   >
-    {players.map((player) => (
-      <SonosPlayer {...player}></SonosPlayer>
-    ))}
-  </DynamicPlatform>
-);
+    {
+      favs.map((fp) => (
+        <SonosFavoritePlayer {...fp}></SonosFavoritePlayer>
+      )).concat(
+        players.map((player) => (
+        <SonosPlayer {...player}></SonosPlayer>
+      )))
+    }
+  </DynamicPlatform>);
+};

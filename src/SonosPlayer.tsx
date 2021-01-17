@@ -10,10 +10,87 @@ import {
 } from "@credding/homebridge-jsx";
 import { Categories } from "homebridge";
 import { SonosApiContext } from "./SonosApiContext";
+import { PlaybackState } from "./SonosApi";
 
 type SonosSpeakerProps = {
   id: string;
   name: string;
+};
+
+type SonosFavSpeakerProps = {
+  favId: string;
+  name: string;
+  groupId: string;
+};
+
+export const SonosFavoritePlayer = ({
+  favId,
+  name,
+  groupId
+} : SonosFavSpeakerProps) : Component<PlatformAccessoryConfiguration> => {
+  const { hap } = useHomebridgeApi();
+  const sonosApi = useContext(SonosApiContext);
+
+  const getPlaying = async () => {
+    const ps = await sonosApi.getGroupPlaybackStatus(groupId);
+    //console.log("got playback status %s", JSON.stringify(ps, null, 2));
+
+    //const pbmd = await sonosApi.groupPlaybackMetadata(groupId);
+    //console.log("got pb md %s", JSON.stringify(pbmd, null, 2));
+
+    if (sonosApi.isFavoriteLoaded(favId) && ps.playbackState == PlaybackState.Playing) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const setPlaying = async (value: boolean) => {  
+    if (value) {
+      // desired state is "Playing"
+
+      if (sonosApi.isFavoriteLoaded(favId)) {
+        // if requested favorite is playing already
+        await sonosApi.groupPlay(groupId);
+      } else {
+        await sonosApi.playFavorite(favId, groupId);
+      }
+    } else {
+      // desired state is "paused"
+
+      await sonosApi.groupPause(groupId);
+    }
+  };
+
+  const getVolume = async () => {
+    const { volume } = await sonosApi.getGroupVolume(groupId);
+    return volume;
+  };
+
+  const setVolume = async (value: number) => {
+    await sonosApi.setGroupVolume(groupId, value);
+  };
+
+  return (
+    <PlatformAccessory
+      name={name}
+      uuid={hap.uuid.generate(favId + groupId)}
+      category={Categories.SPEAKER}
+    >
+      <Service type={hap.Service.Lightbulb}>
+        <BooleanCharacteristic
+          type={hap.Characteristic.On}
+          onGet={getPlaying}
+          onSet={setPlaying}
+        ></BooleanCharacteristic>
+        <NumberCharacteristic
+          type={hap.Characteristic.Brightness}
+          onGet={getVolume}
+          onSet={setVolume}
+        ></NumberCharacteristic>
+      </Service>
+    </PlatformAccessory>
+  );
 };
 
 export const SonosPlayer = ({
@@ -45,14 +122,14 @@ export const SonosPlayer = ({
       uuid={hap.uuid.generate(id)}
       category={Categories.SPEAKER}
     >
-      <Service type={hap.Service.Speaker}>
+      <Service type={hap.Service.Lightbulb}>
         <BooleanCharacteristic
-          type={hap.Characteristic.Mute}
+          type={hap.Characteristic.On}
           onGet={getMuted}
           onSet={setMuted}
         ></BooleanCharacteristic>
         <NumberCharacteristic
-          type={hap.Characteristic.Volume}
+          type={hap.Characteristic.Brightness}
           onGet={getVolume}
           onSet={setVolume}
         ></NumberCharacteristic>
