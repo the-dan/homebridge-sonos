@@ -7,7 +7,7 @@ import {
   Service,
   useContext,
   useHomebridgeApi,
-  useLogger
+  useLogger,
 } from "@credding/homebridge-jsx";
 import { Categories } from "homebridge";
 import { SonosApiContext } from "./SonosApiContext";
