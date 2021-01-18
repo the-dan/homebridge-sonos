@@ -7,6 +7,7 @@ import {
   Service,
   useContext,
   useHomebridgeApi,
+  useLogger
 } from "@credding/homebridge-jsx";
 import { Categories } from "homebridge";
 import { SonosApiContext } from "./SonosApiContext";
@@ -30,13 +31,11 @@ export const SonosFavoritePlayer = ({
 }: SonosFavSpeakerProps): Component<PlatformAccessoryConfiguration> => {
   const { hap } = useHomebridgeApi();
   const sonosApi = useContext(SonosApiContext);
+  const logger = useLogger();
 
   const getPlaying = async () => {
     const ps = await sonosApi.getGroupPlaybackStatus(groupId);
-    //console.log("got playback status %s", JSON.stringify(ps, null, 2));
-
-    //const pbmd = await sonosApi.groupPlaybackMetadata(groupId);
-    //console.log("got pb md %s", JSON.stringify(pbmd, null, 2));
+    logger.debug("Got playback status %s", JSON.stringify(ps, null, 2));
 
     if ((await isPlaying()) && ps.playbackState == PlaybackState.Playing) {
       return true;
@@ -62,9 +61,9 @@ export const SonosFavoritePlayer = ({
 
         // XXX: assuming loadFavorite changes metadata before returning
         const pbmd = await sonosApi.groupPlaybackMetadata(groupId);
-        console.log("got pb md %s", JSON.stringify(pbmd, null, 2));
-        const container = pbmd.container;
+        logger.debug("Got playback metadata %s", JSON.stringify(pbmd, null, 2));
 
+        const container = pbmd.container;
         sonosApi.nowPlaying(favId, groupId, container);
       }
     } else {
