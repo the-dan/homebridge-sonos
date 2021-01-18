@@ -19,6 +19,7 @@ export class FavOnPlayer {
 export class SonosApi {
   private accessToken = "";
   private lastPlayedFavoriteId = "";
+  private newRefreshToken = "";
 
   constructor(
     private clientKey: string,
@@ -45,11 +46,12 @@ export class SonosApi {
       access_token: accessToken,
       expires_in: expiresIn,
       refresh_token: refreshToken,
-    }: AuthorizationApiTokenResponse = await getSuccessfulResponseJson(
+    }: AuthorizationApiTokenResponse = await this.getSuccessfulResponseJson(
       response
     );
 
     this.accessToken = accessToken;
+    this.newRefreshToken = refreshToken;
     this.logger.debug("Access token %s", accessToken);
     return { expiresIn, refreshToken };
   }
@@ -69,11 +71,12 @@ export class SonosApi {
       access_token: accessToken,
       expires_in: expiresIn,
       refresh_token: newRefreshToken,
-    }: AuthorizationApiTokenResponse = await getSuccessfulResponseJson(
+    }: AuthorizationApiTokenResponse = await this.getSuccessfulResponseJson(
       response
     );
 
     this.accessToken = accessToken;
+    this.newRefreshToken = newRefreshToken;
     this.logger.debug("Refreshed Access token %s", accessToken);
     return { expiresIn, refreshToken: newRefreshToken };
   }
@@ -83,7 +86,7 @@ export class SonosApi {
     const response = await fetch(endpoint, {
       headers: [this.getBearerAuthorizationHeader()],
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async getGroups(householdId: string): Promise<GroupsResponse> {
@@ -91,7 +94,7 @@ export class SonosApi {
     const response = await fetch(endpoint, {
       headers: [this.getBearerAuthorizationHeader()],
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async getFavorites(householdId: string): Promise<FavoritesResponse> {
@@ -99,7 +102,7 @@ export class SonosApi {
     const response = await fetch(endpoint, {
       headers: [this.getBearerAuthorizationHeader()],
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async getPlayerVolume(playerId: string): Promise<PlayerVolume> {
@@ -107,7 +110,7 @@ export class SonosApi {
     const response = await fetch(endpoint, {
       headers: [this.getBearerAuthorizationHeader()],
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async getGroupVolume(groupId: string): Promise<PlayerVolume> {
@@ -115,7 +118,7 @@ export class SonosApi {
     const response = await fetch(endpoint, {
       headers: [this.getBearerAuthorizationHeader()],
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async getGroupPlaybackStatus(groupId: string): Promise<PlaybackStatus> {
@@ -123,7 +126,7 @@ export class SonosApi {
     const response = await fetch(endpoint, {
       headers: [this.getBearerAuthorizationHeader()],
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async groupPause(groupId: string): Promise<void> {
@@ -132,7 +135,7 @@ export class SonosApi {
       method: "POST",
       headers: [this.getBearerAuthorizationHeader(), CONTENT_TYPE_JSON_HEADER],
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async groupPlay(groupId: string): Promise<void> {
@@ -141,7 +144,7 @@ export class SonosApi {
       method: "POST",
       headers: [this.getBearerAuthorizationHeader(), CONTENT_TYPE_JSON_HEADER],
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async groupPlaybackMetadata(groupId: string): Promise<PlaybackMetadata> {
@@ -149,7 +152,7 @@ export class SonosApi {
     const response = await fetch(endpoint, {
       headers: [this.getBearerAuthorizationHeader()],
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async setPlayerVolume(
@@ -163,7 +166,7 @@ export class SonosApi {
       headers: [this.getBearerAuthorizationHeader(), CONTENT_TYPE_JSON_HEADER],
       body: JSON.stringify({ volume, muted }),
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async setGroupVolume(
@@ -177,7 +180,7 @@ export class SonosApi {
       headers: [this.getBearerAuthorizationHeader(), CONTENT_TYPE_JSON_HEADER],
       body: JSON.stringify({ volume, muted }),
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async setPlayerMute(playerId: string, muted: boolean): Promise<PlayerVolume> {
@@ -187,7 +190,7 @@ export class SonosApi {
       headers: [this.getBearerAuthorizationHeader(), CONTENT_TYPE_JSON_HEADER],
       body: JSON.stringify({ muted }),
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   async setGroupMute(groupId: string, muted: boolean): Promise<PlayerVolume> {
@@ -197,7 +200,7 @@ export class SonosApi {
       headers: [this.getBearerAuthorizationHeader(), CONTENT_TYPE_JSON_HEADER],
       body: JSON.stringify({ muted }),
     });
-    return await getSuccessfulResponseJson(response);
+    return await this.getSuccessfulResponseJson(response);
   }
 
   public isFavoriteLoaded(favId: string): boolean {
@@ -221,7 +224,7 @@ export class SonosApi {
       headers: [this.getBearerAuthorizationHeader(), CONTENT_TYPE_JSON_HEADER],
       body: JSON.stringify(req),
     });
-    await getSuccessfulResponseJson(response);
+    await this.getSuccessfulResponseJson(response);
 
     this.lastPlayedFavoriteId = favId;
   }
@@ -237,7 +240,40 @@ export class SonosApi {
   private getBearerAuthorizationHeader(): [string, string] {
     return ["Authorization", `Bearer ${this.accessToken}`];
   }
+
+  private async getSuccessfulResponseJson<TResponse>(
+    response: Response
+  ): Promise<TResponse> {
+    if (response.status >= 400) {
+      this.logger.debug("Got Sonos API error status: %d", response.status);
+
+      const body = (await response.json()) as ErrorResponse;
+      this.logger.debug("Response: %s", body);
+
+      if (
+        body?.fault?.detail?.errorcode ==
+        "keymanagement.service.access_token_expired"
+      ) {
+        await this.refreshToken(this.newRefreshToken);
+      }
+
+      throw new StatusCodeError(response.status);
+    }
+    return (await response.json()) as TResponse;
+  }
 }
+
+type ErrorResponse = {
+  fault: Fault;
+};
+
+type Fault = {
+  detail: FaultDetail;
+};
+
+type FaultDetail = {
+  errorcode: string;
+};
 
 export class StatusCodeError extends Error {
   constructor(status: number) {
@@ -394,13 +430,3 @@ type AuthorizationApiTokenResponse = {
   refresh_token: string;
   expires_in: number;
 };
-
-async function getSuccessfulResponseJson<TResponse>(
-  response: Response
-): Promise<TResponse> {
-  if (response.status >= 400) {
-    console.log(await response.json());
-    throw new StatusCodeError(response.status);
-  }
-  return (await response.json()) as TResponse;
-}
