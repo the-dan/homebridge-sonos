@@ -19,6 +19,7 @@ export class FavOnPlayer {
 export class SonosApi {
   private accessToken = "";
   private lastPlayedFavoriteId = "";
+  private currentContainer: Container | null = null;
   private newRefreshToken = "";
 
   constructor(
@@ -205,6 +206,32 @@ export class SonosApi {
 
   public isFavoriteLoaded(favId: string): boolean {
     return this.lastPlayedFavoriteId == favId;
+  }
+
+  public isPlaying(
+    favId: string,
+    groupId: string,
+    container: Container
+  ): boolean {
+    if (!this.currentContainer) {
+      return false;
+    }
+    if (
+      container.id.serviceId == this.currentContainer.id.serviceId &&
+      container.id.objectId == this.currentContainer.id.objectId &&
+      container.id.accountId == this.currentContainer.id.accountId
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  public nowPlaying(
+    favId: string,
+    groupId: string,
+    container: Container
+  ): void {
+    this.currentContainer = container;
   }
 
   async playFavorite(favId: string, groupId: string): Promise<void> {

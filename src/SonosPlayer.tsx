@@ -38,25 +38,34 @@ export const SonosFavoritePlayer = ({
     //const pbmd = await sonosApi.groupPlaybackMetadata(groupId);
     //console.log("got pb md %s", JSON.stringify(pbmd, null, 2));
 
-    if (
-      sonosApi.isFavoriteLoaded(favId) &&
-      ps.playbackState == PlaybackState.Playing
-    ) {
+    if ((await isPlaying()) && ps.playbackState == PlaybackState.Playing) {
       return true;
     }
 
     return false;
   };
 
+  const isPlaying = async () => {
+    const pbmd = await sonosApi.groupPlaybackMetadata(groupId);
+    return sonosApi.isPlaying(favId, groupId, pbmd.container);
+  };
+
   const setPlaying = async (value: boolean) => {
     if (value) {
       // desired state is "Playing"
 
-      if (sonosApi.isFavoriteLoaded(favId)) {
+      if (await isPlaying()) {
         // if requested favorite is playing already
         await sonosApi.groupPlay(groupId);
       } else {
         await sonosApi.playFavorite(favId, groupId);
+
+        // XXX: assuming loadFavorite changes metadata before returning
+        const pbmd = await sonosApi.groupPlaybackMetadata(groupId);
+        console.log("got pb md %s", JSON.stringify(pbmd, null, 2));
+        const container = pbmd.container;
+
+        sonosApi.nowPlaying(favId, groupId, container);
       }
     } else {
       // desired state is "paused"
