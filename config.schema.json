@@ -19,6 +19,11 @@
         "title": "Refresh Token",
         "type": "string",
         "required": true
+      },
+      "useGroups": {
+        "title": "Use group instead of player",
+        "type": "boolean",
+        "required": false
       }
     }
   }
