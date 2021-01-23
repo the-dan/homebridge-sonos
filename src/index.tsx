@@ -28,8 +28,6 @@ const platformFactory = async (
 
   logger.debug("Got favorites %s", JSON.stringify(favs, null, 2));
 
-  await sonosApi.initFavoritesContainers(groups[0].id, favs);
-
   const fp: FavOnPlayer[] = [];
   for (const fe of favs.items) {
     for (const pe of groups) {

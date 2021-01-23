@@ -1,7 +1,7 @@
 {
   "displayName": "Sonos",
   "name": "@the-dan/homebridge-sonos-faves",
-  "version": "0.2.5",
+  "version": "0.2.4",
   "description": "",
   "keywords": [
     "homebridge",
