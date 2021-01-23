@@ -9,11 +9,12 @@ type SonosConfig = {
   readonly clientKey: string;
   readonly clientSecret: string;
   readonly refreshToken: string;
+  readonly useGroups: boolean;
 };
 
 const platformFactory = async (
   logger: Logging,
-  { clientKey, clientSecret, refreshToken }: SonosConfig
+  { clientKey, clientSecret, refreshToken, useGroups }: SonosConfig
 ) => {
   const sonosApi = new SonosApi(clientKey, clientSecret, logger);
   await sonosApi.refreshToken(refreshToken);
@@ -27,10 +28,12 @@ const platformFactory = async (
 
   logger.debug("Got favorites %s", JSON.stringify(favs, null, 2));
 
+  await sonosApi.initFavoritesContainers(groups[0].id, favs);
+
   const fp: FavOnPlayer[] = [];
   for (const fe of favs.items) {
     for (const pe of groups) {
-      fp.push(new FavOnPlayer(fe.id, `${fe.name} in ${pe.name}`, pe.id));
+      fp.push(new FavOnPlayer(fe.id, `${fe.name}`, pe.id));
     }
   }
 
@@ -38,7 +41,12 @@ const platformFactory = async (
 
   return (
     <SonosApiContext.Provider value={sonosApi}>
-      <SonosPlatform players={players} favs={fp}></SonosPlatform>
+      <SonosPlatform
+        players={players}
+        favs={fp}
+        groups={groups}
+        useGroups={useGroups}
+      ></SonosPlatform>
     </SonosApiContext.Provider>
   );
 };

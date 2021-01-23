@@ -61,7 +61,10 @@ export const SonosFavoritePlayer = ({
 
         // XXX: assuming loadFavorite changes metadata before returning
         const pbmd = await sonosApi.groupPlaybackMetadata(groupId);
-        logger.debug("Got playback metadata %s", JSON.stringify(pbmd, null, 2));
+        logger.debug(
+          "Got playback metadata to save what's playing now %s",
+          JSON.stringify(pbmd, null, 2)
+        );
 
         const container = pbmd.container;
         sonosApi.nowPlaying(favId, groupId, container);
@@ -92,6 +95,67 @@ export const SonosFavoritePlayer = ({
         <BooleanCharacteristic
           type={hap.Characteristic.On}
           onGet={getPlaying}
+          onSet={setPlaying}
+        ></BooleanCharacteristic>
+        <NumberCharacteristic
+          type={hap.Characteristic.Brightness}
+          onGet={getVolume}
+          onSet={setVolume}
+        ></NumberCharacteristic>
+      </Service>
+    </PlatformAccessory>
+  );
+};
+
+export const SonosGroupPlayer = ({
+  id,
+  name,
+}: SonosSpeakerProps): Component<PlatformAccessoryConfiguration> => {
+  const { hap } = useHomebridgeApi();
+  const sonosApi = useContext(SonosApiContext);
+  const logger = useLogger();
+
+  const isPlaying = async () => {
+    const ps = await sonosApi.getGroupPlaybackStatus(id);
+    logger.debug("Got playback status %s", JSON.stringify(ps, null, 2));
+
+    if (ps.playbackState == PlaybackState.Playing) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const setPlaying = async (value: boolean) => {
+    if (value) {
+      // desired state is "Playing"
+
+      await sonosApi.groupPlay(id);
+    } else {
+      // desired state is "paused"
+
+      await sonosApi.groupPause(id);
+    }
+  };
+
+  const getVolume = async () => {
+    const { volume } = await sonosApi.getGroupVolume(id);
+    return volume;
+  };
+  const setVolume = async (value: number) => {
+    await sonosApi.setGroupVolume(id, value);
+  };
+
+  return (
+    <PlatformAccessory
+      name={name}
+      uuid={hap.uuid.generate(id)}
+      category={Categories.SPEAKER}
+    >
+      <Service type={hap.Service.Lightbulb}>
+        <BooleanCharacteristic
+          type={hap.Characteristic.On}
+          onGet={isPlaying}
           onSet={setPlaying}
         ></BooleanCharacteristic>
         <NumberCharacteristic

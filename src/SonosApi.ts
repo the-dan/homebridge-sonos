@@ -20,6 +20,7 @@ export class SonosApi {
   private accessToken = "";
   private lastPlayedFavoriteId = "";
   private currentContainer: Container | null = null;
+  private favorites: Record<string, ContainerId> = {};
   private newRefreshToken = "";
 
   constructor(
@@ -213,13 +214,22 @@ export class SonosApi {
     groupId: string,
     container: Container
   ): boolean {
-    if (!this.currentContainer) {
-      return false;
-    }
+    const currentContainerId = this.favorites[favId];
+
+    this.logger.debug(
+      "Container for fav %d is %s",
+      favId,
+      JSON.stringify(currentContainerId, null, 2)
+    );
+    this.logger.debug(
+      "Currently playing %s",
+      JSON.stringify(container, null, 2)
+    );
+
     if (
-      container.id.serviceId == this.currentContainer.id.serviceId &&
-      container.id.objectId == this.currentContainer.id.objectId &&
-      container.id.accountId == this.currentContainer.id.accountId
+      container.id.serviceId == currentContainerId.serviceId &&
+      container.id.objectId == currentContainerId.objectId &&
+      container.id.accountId == currentContainerId.accountId
     ) {
       return true;
     }
@@ -231,7 +241,81 @@ export class SonosApi {
     groupId: string,
     container: Container
   ): void {
+    this.logger.debug(
+      "Setting currently playing to %s",
+      JSON.stringify(container, null, 2)
+    );
     this.currentContainer = container;
+  }
+
+  async initFavoritesContainers(
+    groupId: string,
+    favs: FavoritesResponse
+  ): Promise<void> {
+    // get currently playing
+    //const restoreThis = this.groupPlaybackMetadata(groupId);
+
+    const fass = (id: string, contId: ContainerId) => {
+      this.favorites[id] = contId;
+    };
+
+    for (const f of favs.items) {
+      await this.loadFavorite(groupId, f.id);
+
+      let pbs = await this.getGroupPlaybackStatus(groupId);
+      let attempts = 0;
+      await sleep(2000);
+      while (pbs.playbackState != PlaybackState.Playing) {
+        await sleep(500);
+
+        pbs = await this.getGroupPlaybackStatus(groupId);
+        attempts++;
+
+        if (attempts >= 4) {
+          break;
+        }
+      }
+
+      const favMd = await this.groupPlaybackMetadata(groupId);
+
+      const copy = Object.assign({}, favMd.container.id);
+      fass(f.id, copy);
+
+      this.logger.debug(
+        "Favorite %s (id=%s) container id = %s",
+        f.name,
+        f.id,
+        JSON.stringify(favMd.container.id, null, 2)
+      );
+    }
+
+    this.logger.debug(
+      "Final fav map %s",
+      JSON.stringify(this.favorites, null, 2)
+    );
+
+    // restore currently playing
+    // TODO: it's not clear how to do this
+  }
+
+  async loadFavorite(groupId: string, favId: string): Promise<void> {
+    const endpoint = `${SONOS_CONTROL_API}/groups/${groupId}/favorites`;
+
+    const req = {
+      favoriteId: favId,
+      playOnCompletion: true,
+      playModes: { shuffle: true },
+      action: "REPLACE",
+    };
+
+    this.logger.debug("Request %s", JSON.stringify(req));
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: [this.getBearerAuthorizationHeader(), CONTENT_TYPE_JSON_HEADER],
+      body: JSON.stringify(req),
+    });
+    await this.getSuccessfulResponseJson(response);
   }
 
   async playFavorite(favId: string, groupId: string): Promise<void> {
@@ -457,3 +541,9 @@ type AuthorizationApiTokenResponse = {
   refresh_token: string;
   expires_in: number;
 };
+
+function sleep(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
